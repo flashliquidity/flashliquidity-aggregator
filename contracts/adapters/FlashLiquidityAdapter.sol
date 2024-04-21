@@ -28,19 +28,19 @@ contract FlashLiquidityAdapter is DexAdapter, Governable {
         uint48 feeDenominator;
     }
 
-    /// @dev Array of Uniswap V2 Factory interfaces that the contract interacts with.
+    /// @dev Array of FlashLiquidity Factory interfaces that the contract interacts with.
     IFlashLiquidityFactory[] private s_factories;
-    /// @dev A mapping from Uniswap V2 Factory addresses to their respective data structures.
+    /// @dev A mapping from FlashLiquidity Factory addresses to their respective data structures.
     mapping(address => FlashLiquidityFactoryData) private s_factoryData;
 
     constructor(address governor, string memory description) DexAdapter(description) Governable(governor) {}
 
     /**
      * @dev Registers a new factory in the adapter with specific fee parameters. This function can only be called by the contract's governor.
-     * @param factory The address of the UniswapV2 factory to be registered.
+     * @param factory The address of the FlashLiquidity factory to be registered.
      * @param feeNumerator The numerator part of the fee fraction for this factory.
      * @param feeDenominator The denominator part of the fee fraction for this factory.
-     * @notice This function will revert with 'UniswapV2Adapter__FactoryAlreadyRegistered' if the factory is already registered.
+     * @notice This function will revert with 'FlashLiquidityAdapter__FactoryAlreadyRegistered' if the factory is already registered.
      *         It sets the factory as registered and stores its fee structure.
      */
     function addFactory(address factory, uint48 feeNumerator, uint48 feeDenominator) external onlyGovernor {
@@ -55,7 +55,7 @@ contract FlashLiquidityAdapter is DexAdapter, Governable {
     /**
      * @dev Removes a factory from the list. This function can only be called by the contract's governor.
      * @param factoryIndex The index of the factory in the s_factories array to be removed.
-     * @notice If the factoryIndex is out of bounds of s_factories array, the function will revert with 'UniswapV2Adapter__OutOfBound'.
+     * @notice If the factoryIndex is out of bounds of s_factories array, the function will revert with 'FlashLiquidityAdapter__OutOfBound'.
      *         This function deletes the factory's data and removes it from the s_factories array.
      * @notice Care must be taken to pass the correct factoryIndex, as an incorrect index can result in the removal of the wrong factory.
      */
@@ -174,14 +174,14 @@ contract FlashLiquidityAdapter is DexAdapter, Governable {
     }
 
     /**
-     * @dev Calculates the amount of output tokens that can be obtained from a given input amount for a swap operation in a Uniswap V2 pool, considering the pool's reserves and fee structure.
-     * @param targetPool The address of the Uniswap V2 pool.
+     * @dev Calculates the amount of output tokens that can be obtained from a given input amount for a swap operation in a FlashLiquidity pool, considering the pool's reserves and fee structure.
+     * @param targetPool The address of the FlashLiquidity pool.
      * @param amountIn The amount of input tokens to be swapped.
      * @param feeNumerator The numerator part of the fee fraction for the swap.
      * @param feeDenominator The denominator part of the fee fraction for the swap.
      * @param zeroToOne A boolean flag indicating the direction of the swap (true for swapping token0 to token1, false for token1 to token0).
      * @return amountOut The amount of output tokens that can be received from the swap.
-     * @notice This function computes the output amount by applying the Uniswap V2 formula, taking into account the current reserves of the pool and the specified fee structure.
+     * @notice This function computes the output amount by applying the FlashLiquidity formula, taking into account the current reserves of the pool and the specified fee structure.
      */
     function _getAmountOut(
         address targetPool,
