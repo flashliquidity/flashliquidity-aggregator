@@ -27,7 +27,7 @@ contract FlashLiquidityAdapterIntegrationTest is Test {
 
     function testIntegration__FlashLiquidityAdapter_getMaxOutput() public view {
         address pair = IFlashLiquidityFactory(flFactory).getPair(address(WETH), USDC);
-        if(IFlashLiquidityPair(pair).manager() == address(0)) {
+        if (IFlashLiquidityPair(pair).manager() == address(0)) {
             (uint256 maxOutput, bytes memory extraArgs) = adapter.getMaxOutput(address(WETH), USDC, 1000000000);
             assertTrue(maxOutput > 0 && abi.decode(extraArgs, (address)) == flFactory);
         }
@@ -35,7 +35,7 @@ contract FlashLiquidityAdapterIntegrationTest is Test {
 
     function testIntegration__FlashLiquidityAdapter_swap() public {
         address pair = IFlashLiquidityFactory(flFactory).getPair(address(WETH), USDC);
-        if(IFlashLiquidityPair(pair).manager() == address(0)) {
+        if (IFlashLiquidityPair(pair).manager() == address(0)) {
             (uint256 maxOutput, bytes memory extraArgs) = adapter.getMaxOutput(address(WETH), USDC, 1 ether);
             assertFalse(ERC20(USDC).balanceOf(msg.sender) > 0);
             WETH.deposit{value: 1 ether}();

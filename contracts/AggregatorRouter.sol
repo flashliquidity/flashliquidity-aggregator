@@ -444,12 +444,12 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
             revert AggregatorRouter__InconsistentParamsLength();
         }
         amountsOut = new uint256[](routesLen);
-        AdapterParams memory adapterParams;
+        AdapterParams memory tempAdapterParams;
         uint24 fee = s_fee;
         for (uint256 i; i < routesLen;) {
-            adapterParams = adaptersParams[i];
-            (amountsOut[i]) = s_adapters[adapterParams.index].getOutputFromArgs(
-                tokenIn, tokenOut, _applyFee(amountsIn[i], fee), adapterParams.extraArgs
+            tempAdapterParams = adaptersParams[i];
+            (amountsOut[i]) = s_adapters[tempAdapterParams.index].getOutputFromArgs(
+                tokenIn, tokenOut, _applyFee(amountsIn[i], fee), tempAdapterParams.extraArgs
             );
             unchecked {
                 ++i;
