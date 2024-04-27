@@ -171,8 +171,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         (trade, nativeOut, to) = _validateTradeAndHandleTokens(trade);
         uint256 amountInWithFee = _applyFee(trade.amountIn, s_fee);
         uint256 pathLen = trade.path.length - 1;
-        _findBestRouteAndSwap(trade, amountInWithFee, pathLen);
-        amountOut = amountInWithFee;
+        amountOut = _findBestRouteAndSwap(trade, amountInWithFee, pathLen);
         if (nativeOut) _unwrapNative(amountOut, to);
         emit Swapped(trade.path[0], trade.path[pathLen], to, trade.amountIn, amountOut);
     }
