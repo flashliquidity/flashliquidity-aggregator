@@ -339,9 +339,9 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         private
         returns (uint256 amountOut)
     {
-        (uint256 maxOutput, AdapterParams[] memory params) = _findBestRoute(trade.path, amountInWithFee, pathLen);
+        (uint256 maxOutput, AdapterParams[] memory adapterParams) = _findBestRoute(trade.path, amountInWithFee, pathLen);
         if (maxOutput < trade.amountOutMin) revert AggregatorRouter__InsufficientAmountOut();
-        amountOut = _executeSwaps(trade, params, amountInWithFee, pathLen, false);
+        amountOut = _executeSwaps(trade, adapterParams, amountInWithFee, pathLen, false);
     }
 
     /// @param amount The amount of native token to unwrap.
