@@ -61,7 +61,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
     // Events            //
     ///////////////////////
 
-    event NewDexAdapter(address adapter);
+    event DexAdapterAdded(address adapter);
     event DexAdapterRemoved(address adapter);
     event Swapped(
         address indexed tokenIn, address indexed tokenOut, address indexed to, uint256 amountIn, uint256 amountOut
@@ -123,7 +123,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
     /// @inheritdoc IAggregatorRouter
     function pushDexAdapter(address adapter) external onlyGovernor {
         s_adapters.push(IDexAdapter(adapter));
-        emit NewDexAdapter(adapter);
+        emit DexAdapterAdded(adapter);
     }
 
     /// @inheritdoc IAggregatorRouter
