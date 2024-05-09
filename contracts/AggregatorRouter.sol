@@ -400,7 +400,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         if (pathLen < 2) revert AggregatorRouter__InvalidPathLength();
         address tokenIn = trade.path[0];
         address tokenOut = trade.path[pathLen - 1];
-        if (tokenIn == tokenOut) revert AggregatorRouter__InvalidTrade();
+        if (pathLen == 2 && tokenIn == tokenOut) revert AggregatorRouter__InvalidTrade();
         if (trade.amountOutMin == 0) revert AggregatorRouter__ZeroAmountOutMin();
         bool nativeIn = tokenIn == address(0);
         nativeOut = tokenOut == address(0);
