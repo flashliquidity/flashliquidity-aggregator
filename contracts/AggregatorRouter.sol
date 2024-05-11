@@ -269,7 +269,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         address swapStepTo;
         uint256 amountOutMin;
         if (pathLen != adapterParams.length) revert AggregatorRouter__InconsistentParamsLength();
-        for (uint256 i = 0; i < pathLen; ++i) {
+        for (uint256 i = 0; i < pathLen;) {
             if (i == pathLen - 1) {
                 swapStepTo = trade.to;
                 amountOutMin = checkLastSwapStepAmountOut ? trade.amountOutMin : 0;
@@ -286,6 +286,9 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
                 adapterParams[i].index,
                 adapterParams[i].extraArgs
             );
+            unchecked {
+                ++i;
+            }
         }
         return amountInWithFee;
     }
