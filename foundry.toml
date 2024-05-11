@@ -7,7 +7,15 @@ via_ir = false
 libs = ['node_modules', 'lib']
 test = 'test'
 cache_path  = 'foundry-cache'
-gas_reports = ["AggregatorRouter"]
+gas_reports = [
+    "AggregatorRouter",
+    "AlgebraAdapter",
+    "BalancerV2Adapter",
+    "FlashLiquidityAdapter",
+    "TraderJoeLBAdapter",
+    "UniswapV2Adapter",
+    "UniswapV3Adapter"
+]
 bytecode_hash = "none"
 ffi = false
 
