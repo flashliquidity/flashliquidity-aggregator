@@ -302,7 +302,8 @@ contract UniswapV3Adapter is DexAdapter, Governable, IUniswapV3SwapCallback {
         bytes memory encodedQuoterParams;
         uint24 fee;
         address targetPool;
-        for (uint256 i; i < targetFactoryData.fees.length;) {
+        uint256 feesLen = targetFactoryData.fees.length;
+        for (uint256 i; i < feesLen;) {
             fee = targetFactoryData.fees[i];
             targetPool = targetFactory.getPool(quoterParams.tokenIn, quoterParams.tokenOut, fee);
             if (targetPool != address(0)) {
