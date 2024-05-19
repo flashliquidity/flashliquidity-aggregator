@@ -6,7 +6,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import {IUniswapV3SwapCallback} from "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
 import {IQuoterV2} from "@uniswap/v3-periphery/contracts/interfaces/IQuoterV2.sol";
 import {Governable} from "flashliquidity-acs/contracts/Governable.sol";
 import {DexAdapter} from "./DexAdapter.sol";
@@ -15,7 +14,7 @@ import {DexAdapter} from "./DexAdapter.sol";
  * @title UniswapV3Adapter
  * @author Oddcod3 (@oddcod3)
  */
-contract UniswapV3Adapter is DexAdapter, Governable, IUniswapV3SwapCallback {
+contract UniswapV3Adapter is DexAdapter, Governable {
     using SafeERC20 for IERC20;
 
     error UniswapV3Adapter__OutOfBound();
@@ -51,6 +50,24 @@ contract UniswapV3Adapter is DexAdapter, Governable, IUniswapV3SwapCallback {
     mapping(address => UniswapV3FactoryData) private s_factoryData;
 
     constructor(address governor, string memory description) DexAdapter(description) Governable(governor) {}
+
+    /// @dev Redirect callback function
+    /// The callback function on different UniswapV3 forks is not the same, so use fallback instead
+    fallback(bytes calldata data) external returns (bytes memory) {
+        (int256 amount0Delta, int256 amount1Delta, bytes memory callbackData) =
+            abi.decode(data[4:], (int256, int256, bytes));
+        SwapCallbackData memory swapData = abi.decode(callbackData, (SwapCallbackData));
+        if (amount0Delta <= 0 && amount1Delta <= 0) revert UniswapV3Adapter__InvalidAmountDeltas();
+        if (!s_factoryData[swapData.factory].isRegistered) revert UniswapV3Adapter__NotRegisteredFactory();
+        if (
+            msg.sender != IUniswapV3Factory(swapData.factory).getPool(swapData.tokenIn, swapData.tokenOut, swapData.fee)
+        ) {
+            revert UniswapV3Adapter__NotAuthorizedPool();
+        }
+        uint256 amountToPay = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
+        IERC20(swapData.tokenIn).safeTransferFrom(swapData.sender, msg.sender, amountToPay);
+        return "";
+    }
 
     /**
      * @dev Registers a new Uniswap V3 factory in the system along with its quoter and fee. This function can only be executed by the contract's governor.
@@ -122,21 +139,6 @@ contract UniswapV3Adapter is DexAdapter, Governable, IUniswapV3SwapCallback {
             factoryData.fees[feeIndex] = factoryData.fees[feesLen - 1];
         }
         factoryData.fees.pop();
-    }
-
-    /// @inheritdoc IUniswapV3SwapCallback
-    function uniswapV3SwapCallback(int256 amount0Delta, int256 amount1Delta, bytes calldata callbackData)
-        external
-        override
-    {
-        if (amount0Delta <= 0 && amount1Delta <= 0) revert UniswapV3Adapter__InvalidAmountDeltas();
-        SwapCallbackData memory data = abi.decode(callbackData, (SwapCallbackData));
-        if (!s_factoryData[data.factory].isRegistered) revert UniswapV3Adapter__NotRegisteredFactory();
-        if (msg.sender != IUniswapV3Factory(data.factory).getPool(data.tokenIn, data.tokenOut, data.fee)) {
-            revert UniswapV3Adapter__NotAuthorizedPool();
-        }
-        uint256 amountToPay = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
-        IERC20(data.tokenIn).safeTransferFrom(data.sender, msg.sender, amountToPay);
     }
 
     /// @inheritdoc DexAdapter
