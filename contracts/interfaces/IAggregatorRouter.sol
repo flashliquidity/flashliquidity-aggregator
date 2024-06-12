@@ -105,6 +105,17 @@ interface IAggregatorRouter {
     function findBestRouteAndSwap(TradeParams memory trade) external payable returns (uint256 amountOut);
 
     /**
+     * @dev Finds the best routes for a trade given the number of steps and executes it.
+     * @param trade A `TradeParams` struct containing trade parameters.
+     * @param steps The number of times to split the trade amountIn. Each time, search for the best route and execute with the split amount.
+     * @return amountOut The output amount of the trade.
+     * @notice Reverts if the final amount out is less than `amountOutMin` field specified in the TradeParams struct.
+     */
+    function findBestRoutesAndSwap(TradeParams memory trade, uint256 steps)
+        external
+        payable
+        returns (uint256 amountOut);
+    /**
      * @dev Executes a swap via a single route based on pre-specified adapter parameters.
      * @param trade A `TradeParams` struct containing trade parameters.
      * @param adapterParams Array of `AdapterParams` for each step in the trade route.

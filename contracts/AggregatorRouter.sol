@@ -35,6 +35,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
     error AggregatorRouter__NotFromFeeClaimer();
     error AggregatorRouter__UnsupportedInputToken();
     error AggregatorRouter__InvalidPathLength();
+    error AggregatorRouter__InsufficientSteps();
 
     ///////////////////////
     // State Variables   //
@@ -172,6 +173,32 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         uint256 amountInWithFee = _applyFee(trade.amountIn, s_fee);
         uint256 pathLen = trade.path.length - 1;
         amountOut = _findBestRouteAndSwap(trade, amountInWithFee, pathLen);
+        if (nativeOut) _unwrapNative(amountOut, to);
+        emit Swapped(trade.path[0], trade.path[pathLen], to, trade.amountIn, amountOut);
+    }
+
+    /// @inheritdoc IAggregatorRouter
+    function findBestRoutesAndSwap(TradeParams memory trade, uint256 steps)
+        external
+        payable
+        nonReentrant
+        returns (uint256 amountOut)
+    {
+        if (steps < 2) revert AggregatorRouter__InsufficientSteps();
+        bool nativeOut;
+        address to;
+        (trade, nativeOut, to) = _validateTradeAndHandleTokens(trade);
+        uint256 amountInWithFee = _applyFee(trade.amountIn, s_fee);
+        uint256 amountStep = amountInWithFee / steps;
+        uint256 pathLen = trade.path.length - 1;
+        for (uint256 i; i < steps - 1;) {
+            amountInWithFee -= amountStep;
+            amountOut += _findBestRouteAndSwap(trade, amountStep, pathLen);
+            unchecked {
+                ++i;
+            }
+        }
+        amountOut += _findBestRouteAndSwap(trade, amountInWithFee, pathLen);
         if (nativeOut) _unwrapNative(amountOut, to);
         emit Swapped(trade.path[0], trade.path[pathLen], to, trade.amountIn, amountOut);
     }
@@ -413,7 +440,8 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
             trade.amountIn = msg.value;
             i_weth.deposit{value: msg.value}();
             trade.path[0] = address(i_weth);
-        } if (nativeOut) {
+        }
+        if (nativeOut) {
             trade.to = address(this);
             trade.path[pathLen - 1] = address(i_weth);
         }
