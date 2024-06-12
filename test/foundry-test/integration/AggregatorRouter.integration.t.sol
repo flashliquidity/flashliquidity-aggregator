@@ -80,6 +80,21 @@ contract AggregatorRouterTest is Test {
         assertGt(alice.balance, aliceNativeBalance);
     }
 
+    function testIntegration__AggregatorRouter_findBestRoutesAndSwap() public {
+        assertEq(ERC20(USDC).balanceOf(bob), 0);
+        IAggregatorRouter.TradeParams memory trade = createTradeParams(address(0), USDC, bob, 0, 1);
+        router.findBestRoutesAndSwap{value: 1000 ether}(trade, 3);
+        uint256 balanceUSDC = ERC20(USDC).balanceOf(bob);
+        assertGt(ERC20(USDC).balanceOf(bob), 0);
+        trade = createTradeParams(USDC, address(0), alice, balanceUSDC, 1);
+        uint256 aliceNativeBalance = alice.balance;
+        vm.startPrank(bob);
+        ERC20(USDC).approve(address(router), balanceUSDC);
+        router.findBestRoutesAndSwap(trade, 3);
+        vm.stopPrank();
+        assertGt(alice.balance, aliceNativeBalance);
+    }
+
     function testIntegration__AggregatorRouter_swapSingleRoute() public {
         assertEq(ERC20(USDC).balanceOf(bob), 0);
         address[] memory path = new address[](2);
