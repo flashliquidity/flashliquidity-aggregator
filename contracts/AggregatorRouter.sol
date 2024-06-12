@@ -413,7 +413,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
             trade.amountIn = msg.value;
             i_weth.deposit{value: msg.value}();
             trade.path[0] = address(i_weth);
-        } else if (nativeOut) {
+        } if (nativeOut) {
             trade.to = address(this);
             trade.path[pathLen - 1] = address(i_weth);
         }
