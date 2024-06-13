@@ -68,31 +68,31 @@ contract AggregatorRouterTest is Test {
     function testIntegration__AggregatorRouter_findBestRouteAndSwap() public {
         assertEq(ERC20(USDC).balanceOf(bob), 0);
         IAggregatorRouter.TradeParams memory trade = createTradeParams(address(0), USDC, bob, 0, 1);
-        router.findBestRouteAndSwap{value: 1 ether}(trade);
-        uint256 balanceUSDC = ERC20(USDC).balanceOf(bob);
-        assertGt(ERC20(USDC).balanceOf(bob), 0);
-        trade = createTradeParams(USDC, address(0), alice, balanceUSDC, 1);
+        uint256 amountOut = router.findBestRouteAndSwap{value: 1 ether}(trade);
+        uint256 bobUsdcBalance = ERC20(USDC).balanceOf(bob);
+        assertGe(bobUsdcBalance, amountOut);
+        trade = createTradeParams(USDC, address(0), alice, bobUsdcBalance, 1);
         uint256 aliceNativeBalance = alice.balance;
         vm.startPrank(bob);
-        ERC20(USDC).approve(address(router), balanceUSDC);
-        router.findBestRouteAndSwap(trade);
+        ERC20(USDC).approve(address(router), bobUsdcBalance);
+        amountOut = router.findBestRouteAndSwap(trade);
         vm.stopPrank();
-        assertGt(alice.balance, aliceNativeBalance);
+        assertGe(alice.balance, aliceNativeBalance + amountOut);
     }
 
     function testIntegration__AggregatorRouter_findBestRoutesAndSwap() public {
         assertEq(ERC20(USDC).balanceOf(bob), 0);
         IAggregatorRouter.TradeParams memory trade = createTradeParams(address(0), USDC, bob, 0, 1);
-        router.findBestRoutesAndSwap{value: 1000 ether}(trade, 3);
-        uint256 balanceUSDC = ERC20(USDC).balanceOf(bob);
-        assertGt(ERC20(USDC).balanceOf(bob), 0);
-        trade = createTradeParams(USDC, address(0), alice, balanceUSDC, 1);
+        uint256 amountOut = router.findBestRoutesAndSwap{value: 1000 ether}(trade, 3);
+        uint256 bobUsdcBalance = ERC20(USDC).balanceOf(bob);
+        assertGe(bobUsdcBalance, amountOut);
+        trade = createTradeParams(USDC, address(0), alice, bobUsdcBalance, 1);
         uint256 aliceNativeBalance = alice.balance;
         vm.startPrank(bob);
-        ERC20(USDC).approve(address(router), balanceUSDC);
-        router.findBestRoutesAndSwap(trade, 3);
+        ERC20(USDC).approve(address(router), bobUsdcBalance);
+        amountOut = router.findBestRoutesAndSwap(trade, 3);
         vm.stopPrank();
-        assertGt(alice.balance, aliceNativeBalance);
+        assertGe(alice.balance, aliceNativeBalance + amountOut);
     }
 
     function testIntegration__AggregatorRouter_swapSingleRoute() public {
@@ -103,26 +103,27 @@ contract AggregatorRouterTest is Test {
         (uint256 maxOutput, IAggregatorRouter.AdapterParams[] memory params) = router.getBestRoute(path, 1 ether);
         IAggregatorRouter.TradeParams memory trade = createTradeParams(address(0), USDC, bob, 0, maxOutput);
         router.swapSingleRoute{value: 1 ether}(trade, params);
-        assertGt(ERC20(USDC).balanceOf(bob), 0);
-        uint256 balanceUSDC = ERC20(USDC).balanceOf(bob);
-        trade = createTradeParams(USDC, address(0), alice, balanceUSDC, maxOutput);
+        uint256 bobUsdcBalance = ERC20(USDC).balanceOf(bob);
+        assertGe(bobUsdcBalance, maxOutput);
+        trade = createTradeParams(USDC, address(0), alice, bobUsdcBalance, maxOutput);
         uint256 aliceNativeBalance = alice.balance;
         path[0] = USDC;
         path[1] = address(0);
         vm.startPrank(bob);
-        (maxOutput, params) = router.getBestRoute(path, 1 ether);
-        ERC20(USDC).approve(address(router), balanceUSDC);
+        (maxOutput, params) = router.getBestRoute(path, bobUsdcBalance);
+        ERC20(USDC).approve(address(router), bobUsdcBalance);
         router.swapSingleRoute(trade, params);
         vm.stopPrank();
-        assertGt(alice.balance, aliceNativeBalance);
+        assertGe(alice.balance, aliceNativeBalance + maxOutput);
     }
 
     function testIntegration__AggregatorRouter_swapSplitRoutes() public {
         assertEq(ERC20(USDC).balanceOf(bob), 0);
         uint256[] memory amountsIn = new uint256[](2);
-        amountsIn[0] = 5e17;
-        amountsIn[1] = 5e17;
-        (, bytes[][] memory adaptersArgs) = router.getAllAdapterOutputsAndArgs(WETH, USDC, 1 ether);
+        amountsIn[0] = 1 ether;
+        amountsIn[1] = 1 ether;
+        (uint256[][] memory amountsOut, bytes[][] memory adaptersArgs) =
+            router.getAllAdapterOutputsAndArgs(WETH, USDC, 1 ether);
         IAggregatorRouter.TradeParams memory trade = createTradeParams(address(0), USDC, bob, 0, 1);
         IAggregatorRouter.AdapterParams[][] memory adaptersParams = new IAggregatorRouter.AdapterParams[][](2);
         adaptersParams[0] = new IAggregatorRouter.AdapterParams[](1);
@@ -131,20 +132,20 @@ contract AggregatorRouterTest is Test {
         adaptersParams[0][0].extraArgs = adaptersArgs[0][0];
         adaptersParams[1][0].index = 1;
         adaptersParams[1][0].extraArgs = adaptersArgs[1][0];
-        router.swapSplitRoutes{value: 1 ether}(trade, adaptersParams, amountsIn);
-        assertGt(ERC20(USDC).balanceOf(bob), 0);
-        uint256 balanceUSDC = ERC20(USDC).balanceOf(bob);
-        trade = createTradeParams(USDC, address(0), alice, balanceUSDC, 1);
-        amountsIn[0] = balanceUSDC / 2;
-        amountsIn[1] = balanceUSDC - amountsIn[0];
-        (, adaptersArgs) = router.getAllAdapterOutputsAndArgs(WETH, USDC, 1 ether);
+        router.swapSplitRoutes{value: 2 ether}(trade, adaptersParams, amountsIn);
+        uint256 bobUsdcBalance = ERC20(USDC).balanceOf(bob);
+        assertGe(bobUsdcBalance, amountsOut[0][0] + amountsOut[1][0]);
+        trade = createTradeParams(USDC, address(0), alice, bobUsdcBalance, 1);
+        amountsIn[0] = bobUsdcBalance / 2;
+        amountsIn[1] = bobUsdcBalance - amountsIn[0];
+        (amountsOut, adaptersArgs) = router.getAllAdapterOutputsAndArgs(USDC, WETH, amountsIn[0]);
         adaptersParams[0][0].extraArgs = adaptersArgs[0][0];
         adaptersParams[1][0].extraArgs = adaptersArgs[1][0];
         uint256 aliceNativeBalance = alice.balance;
         vm.startPrank(bob);
-        ERC20(USDC).approve(address(router), balanceUSDC);
+        ERC20(USDC).approve(address(router), bobUsdcBalance);
         router.swapSplitRoutes(trade, adaptersParams, amountsIn);
         vm.stopPrank();
-        assertGt(alice.balance, aliceNativeBalance);
+        assertGe(alice.balance, aliceNativeBalance + amountsOut[0][0] + amountsOut[1][0]);
     }
 }
