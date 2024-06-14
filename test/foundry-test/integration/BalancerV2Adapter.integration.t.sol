@@ -14,9 +14,7 @@ contract BalancerV2AdapterIntegrationTest is Test {
     IWETH WETH = IWETH(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
     address governor = makeAddr("governor");
     address balancerV2Vault = address(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-    address balancerQuoter = address(0xE39B5e3B6D74016b2F6A9673D7d7493B6DF549d5);
     address wbtcWethUsdcPool = address(0x64541216bAFFFEec8ea535BB71Fbc927831d0595);
-    address wstEthWethPool = address(0x9791d590788598535278552EEcD4b211bFc790CB);
     address WBTC = address(0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f);
 
     function setUp() public {

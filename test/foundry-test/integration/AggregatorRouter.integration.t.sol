@@ -26,7 +26,6 @@ contract AggregatorRouterTest is Test {
     address flFactory = address(0x6e553d5f028bD747a27E138FA3109570081A23aE);
     address uniV3Factory = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
     address uniV3Quoter = address(0xc80f61d1bdAbD8f5285117e1558fDDf8C64870FE);
-    address uniV3ForkFactory = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
     address uniV2ForkFactory = address(0xd394E9CC20f43d2651293756F8D320668E850F1b);
     uint24[] uniV3Fees = [500, 3000];
     address flEthUsdc = address(0xdE67c936D87455A77BAeF8Ab7e6c26Eb3D828735);
