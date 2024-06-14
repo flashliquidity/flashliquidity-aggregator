@@ -172,7 +172,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         (trade, nativeOut, to) = _validateTradeAndHandleTokens(trade);
         uint256 amountInWithFee = _applyFee(trade.amountIn, s_fee);
         uint256 pathLen = trade.path.length - 1;
-        amountOut = _findBestRouteAndSwap(trade, amountInWithFee, pathLen);
+        amountOut = _findBestRouteAndSwap(trade, amountInWithFee, pathLen, s_adapters);
         if (nativeOut) _unwrapNative(amountOut, to);
         emit Swapped(trade.path[0], trade.path[pathLen], to, trade.amountIn, amountOut);
     }
@@ -191,14 +191,15 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         uint256 amountInWithFee = _applyFee(trade.amountIn, s_fee);
         uint256 amountStep = amountInWithFee / steps;
         uint256 pathLen = trade.path.length - 1;
+        IDexAdapter[] memory adapters = s_adapters;
         for (uint256 i; i < steps - 1;) {
             amountInWithFee -= amountStep;
-            amountOut += _findBestRouteAndSwap(trade, amountStep, pathLen);
+            amountOut += _findBestRouteAndSwap(trade, amountStep, pathLen, adapters);
             unchecked {
                 ++i;
             }
         }
-        amountOut += _findBestRouteAndSwap(trade, amountInWithFee, pathLen);
+        amountOut += _findBestRouteAndSwap(trade, amountInWithFee, pathLen, adapters);
         if (nativeOut) _unwrapNative(amountOut, to);
         emit Swapped(trade.path[0], trade.path[pathLen], to, trade.amountIn, amountOut);
     }
@@ -325,15 +326,15 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
      * @param path An array of token addresses defining the swap route.
      * @param amountIn The amount of input tokens available for swapping.
      * @param pathLen The number of swaps in the path.
+     * @param adapters Array of DEX adapters used to find the best adapter that provides the highest output.
      * @return maxOutput The maximum amount of output tokens that can be obtained through the best route.
      * @return adaptersParams An array of `AdapterParams` that contains the best adapter index and specific arguments for each swap in the path.
      */
-    function _findBestRoute(address[] memory path, uint256 amountIn, uint256 pathLen)
+    function _findBestRoute(address[] memory path, uint256 amountIn, uint256 pathLen, IDexAdapter[] memory adapters)
         private
         view
         returns (uint256 maxOutput, AdapterParams[] memory adaptersParams)
     {
-        IDexAdapter[] memory adapters = s_adapters;
         uint256 adaptersLen = adapters.length;
         uint256 tempOutput;
         bytes memory tempExtraArgs;
@@ -363,13 +364,17 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
      * @param trade The `TradeParams` struct containing trade details such as the path, destination, and minimum required output.
      * @param amountInWithFee The initial amount of input tokens available for swapping, already adjusted for any applicable fees.
      * @param pathLen The number of swaps (transitions between tokens) in the path.
+     * @param adapters Array of DEX adapters used to find the best adapter that provides the highest output.
      * @return amountOut The total output received after executing the swaps along the best route.
      */
-    function _findBestRouteAndSwap(TradeParams memory trade, uint256 amountInWithFee, uint256 pathLen)
-        private
-        returns (uint256 amountOut)
-    {
-        (uint256 maxOutput, AdapterParams[] memory adapterParams) = _findBestRoute(trade.path, amountInWithFee, pathLen);
+    function _findBestRouteAndSwap(
+        TradeParams memory trade,
+        uint256 amountInWithFee,
+        uint256 pathLen,
+        IDexAdapter[] memory adapters
+    ) private returns (uint256 amountOut) {
+        (uint256 maxOutput, AdapterParams[] memory adapterParams) =
+            _findBestRoute(trade.path, amountInWithFee, pathLen, adapters);
         if (maxOutput < trade.amountOutMin) revert AggregatorRouter__InsufficientAmountOut();
         amountOut = _executeSwaps(trade, adapterParams, amountInWithFee, pathLen, false);
     }
@@ -459,7 +464,7 @@ contract AggregatorRouter is IAggregatorRouter, Governable, ReentrancyGuard {
         if (path[0] == address(0)) path[0] = address(i_weth);
         if (path[pathLen] == address(0)) path[pathLen] = address(i_weth);
         uint256 amountInWithFee = _applyFee(amountIn, s_fee);
-        (maxOutput, params) = _findBestRoute(path, amountInWithFee, pathLen);
+        (maxOutput, params) = _findBestRoute(path, amountInWithFee, pathLen, s_adapters);
     }
 
     /// @inheritdoc IAggregatorRouter
